@@ -93,7 +93,7 @@ graph TD
 
 ```
 
----
+--
 
 ### 2. O Ciclo de Vida do Escrow (A "Dívida")
 
