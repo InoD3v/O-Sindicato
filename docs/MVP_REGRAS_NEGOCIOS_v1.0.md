@@ -103,3 +103,70 @@ O peso do voto de um usuário é capturado no momento em que o voto é computado
 | `ERR_NOT_CREDITOR` | "Apenas o credor pode confirmar este pagamento." | Usuário comum tentando baixar dívida alheia. |
 
 ---
+
+## Diagramas
+
+### 1. Fluxo Geral do Sistema (User Journey)
+
+Este diagrama mostra desde a entrada do usuário até o uso das Pikas.
+
+```mermaid
+graph TD
+    A[Usuário entra no App] --> B{Já tem grupo?}
+    B -- Não --> C[Cria Novo Grupo]
+    B -- Sim --> D[Entra em Grupo Existente]
+    
+    C --> E[Recebe 100 Pikas iniciais]
+    D --> E
+    
+    E --> F[Painel do Grupo]
+    
+    F --> G[Registrar Dívida]
+    F --> H[Votar em Enquetes]
+    
+    G --> I[Credor cria -> Status: PENDING]
+    H --> J[Peso do Voto = Saldo Total de Pikas]
+
+```
+
+---
+
+### 2. O Ciclo de Vida do Escrow (A "Dívida")
+
+Este é o ponto mais crítico para os desenvolvedores de Backend e Frontend entenderem.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Pending : Credor registra dívida
+    
+    Pending --> Active : Devedor clica em 'Aceitar'
+    note right of Active : Saldo de Pikas é BLOQUEADO
+    
+    Active --> Settled : Credor confirma pagamento
+    note right of Settled : Saldo de Pikas é DESBLOQUEADO
+    
+    Pending --> Cancelled : Credor desiste ou Devedor recusa
+    
+    Settled --> [*]
+    Cancelled --> [*]
+
+```
+
+---
+
+### 3. Lógica de Validação de Saldo (Backend)
+
+Como o código deve se comportar quando alguém tenta aceitar um acordo.
+
+```mermaid
+flowchart TD
+    Start((Início)) --> Accept[Devedor tenta Aceitar Dívida]
+    Accept --> CheckBalance{Saldo Disponível >= Valor?}
+    
+    CheckBalance -- Não --> Error[Retorna Erro: Saldo Insuficiente]
+    CheckBalance -- Sim --> Lock[Bloqueia Valor na Tabela Transactions]
+    
+    Lock --> UpdateStatus[Muda status para ACTIVE]
+    UpdateStatus --> End((Sucesso))
+
+```
