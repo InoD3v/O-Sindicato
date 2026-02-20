@@ -21,7 +21,7 @@ Não "suje" o repositório com arquivos que são gerados automaticamente pela su
 ### Frontend (React/Node)
 
 * **Proibido subir:** `node_modules/`, `dist/`, `build/`, `.eslintcache`.
-* **Por que?** Esses arquivos são recriados ao rodar `npm install` ou `npm run build`.
+* **Por que?** Esses arquivos são recriados ao rodar `bun install` ou `bun run build`.
 
 ### Backend (.NET)
 
@@ -45,7 +45,7 @@ Usaremos variáveis de ambiente para tudo que muda conforme o local onde o códi
 Para evitar brigas de estilo no Code Review e garantir que o código pareça escrito por uma única pessoa:
 
 * **EditorConfig:** Teremos um arquivo `.editorconfig` na raiz. Ele configura automaticamente o seu VS Code ou Visual Studio para usar o mesmo número de espaços, tipo de quebra de linha e indentação.
-* **Prettier/ESLint (Front):** O build falhará se houver erros de lint. Formate seu código antes de commitar.
+* **Prettier/ESLint (Front):** O build falhará se houver erros de lint. Formate seu código antes de commitar. Usamos **Bun** como runtime e package manager.
 * **Format on Save:** Recomendamos ativar a opção "Format on Save" na sua IDE.
 
 ---

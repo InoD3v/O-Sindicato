@@ -1,6 +1,6 @@
-# 🎨 Frontend Standards: Project "The Syndicate" (React + TS)
+# 🎨 Frontend Standards: Project "The Syndicate" (React 19 + TS)
 
-Este guia define os padrões para o desenvolvimento do ecossistema front-end do "The Syndicate". Foco em: **Desacoplamento, Performance e Tipagem Estrita.**
+Este guia define os padrões para o desenvolvimento do ecossistema front-end do "The Syndicate" utilizando **React 19** (última versão estável). Foco em: **Desacoplamento, Performance e Tipagem Estrita.**
 
 ---
 
@@ -11,7 +11,7 @@ Este guia define os padrões para o desenvolvimento do ecossistema front-end do 
 * **Variables/Functions:** `camelCase` (ex: `const [isModalOpen, setIsModalOpen]`).
 * **Components/Interfaces/Types:** `PascalCase` (ex: `DebtCard.tsx`, `UserPayload`).
 * **Files:** Nome do componente em `PascalCase` ou `camelCase` para utilitários.
-* **CSS/Tailwind:** Seguir o padrão de utilitários ou `kebab-case` se usar módulos.
+* **CSS:** Seguir o padrão definido pela estratégia de estilização escolhida pelo time (ver [ADR 002](ADR/002-tailwind-ao-inves-de-styled-components.md)).
 
 ---
 
@@ -44,17 +44,18 @@ Para facilitar o Code Review, nenhum arquivo `.tsx` deve ter mais de 150 linhas.
 
 1. **Service (Data):** Apenas chamadas `axios`. Sem lógica de tratamento, apenas retorno de tipos.
 2. **Hook (Logic):** Onde o `useEffect`, `useState` e validações residem. É o "Cérebro".
-3. **View (UI):** Onde o JSX e o Tailwind residem. É o "Corpo".
+3. **View (UI):** Onde o JSX e a estilização residem. É o "Corpo".
 
 ---
 
-## 4. Styling: Tailwind CSS
+## 4. Styling (Em Discussão)
 
-Utilizaremos **Tailwind CSS** para evitar arquivos CSS gigantes e seletores globais.
+> ⚠️ **Nota:** A estratégia de estilização ainda não foi definida — ver [ADR 002](ADR/002-tailwind-ao-inves-de-styled-components.md). Esta seção será atualizada após a decisão.
 
-* **Padrão:** Use classes utilitárias diretamente no JSX.
-* **Complexidade:** Se uma lista de classes ficar muito grande, quebre o componente em partes menores em vez de criar variáveis de string para classes.
+Independente da escolha:
+* **Componentes pequenos:** Se a estilização de um componente ficar muito extensa, quebre em componentes menores.
 * **Icons:** Use apenas **Lucide React**. Ex: `<Users className="w-5 h-5" />`.
+* **Responsividade:** Garantir que todos os componentes funcionem em diferentes tamanhos de tela.
 
 ---
 
@@ -87,7 +88,7 @@ Não usaremos Redux por enquanto para manter o MVP simples.
 
 ## 7. API Communication (Axios)
 
-* **Instance:** Localizada em `src/services/api.ts`.
+* **Instance:** Localizada em `src/services/api.ts`. Usamos **Bun** como runtime e package manager.
 * **Interceptors:**
 * `onRequest`: Anexa o `Bearer Token` do localStorage.
 * `onResponse`: Captura erros `401` para deslogar o usuário e `403` para avisar sobre falta de permissão.
@@ -111,7 +112,7 @@ Não usaremos Redux por enquanto para manter o MVP simples.
 * [ ] Existe lógica de `fetch` ou `map` pesado dentro do `.tsx` da View? (Deveria estar no Hook).
 * [ ] Os valores monetários estão sendo formatados via `utils`?
 * [ ] O formulário possui validação visual de erro para o usuário?
-* [ ] O componente é responsivo (usa classes `sm:`, `md:`, `lg:` do Tailwind)?
+* [ ] O componente é responsivo?
 * [ ] Foram usados ícones do Lucide de forma consistente?
 
 ---

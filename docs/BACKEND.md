@@ -1,6 +1,6 @@
-# 📖 Backend Standards: Project "The Syndicate" (.NET 8/9)
+# 📖 Backend Standards: Project "The Syndicate" (.NET 10)
 
-Este documento define os padrões técnicos para o desenvolvimento do "The Syndicate". O foco é manter o código simples, auditável e preparado para revisões de código (code review) eficientes.
+Este documento define os padrões técnicos para o desenvolvimento do backend do "The Syndicate" utilizando **.NET 10** (última versão estável). O foco é manter o código simples, auditável e preparado para revisões de código (code review) eficientes.
 
 ---
 
@@ -28,9 +28,9 @@ Adotamos a **Layered Architecture** simplificada. A dependência deve sempre apo
 
 ## 3. Database & EF Core (Persistência)
 
-### Ledger System (Sistema de Livro-Razão)
+### Sistema de Saldo (Em Discussão)
 
-Para garantir integridade, **não** usaremos apenas uma coluna `Balance`. O saldo de um usuário é a soma de suas transações.
+> ⚠️ **Nota:** A estratégia de saldo (Ledger vs Coluna Balance) ainda está em discussão — ver [ADR 004](ADR/004-ledger-ao-inves-de-coluna-balance.md). As tabelas abaixo representam a estrutura base, e a tabela `transactions` será ajustada conforme a decisão final.
 
 | Table Name (English) | Description |
 | --- | --- |
@@ -114,4 +114,4 @@ Ao revisar um Pull Request, verifique:
 * [ ] Existe lógica de negócio dentro da Controller? (Deve ir para um Handler).
 * [ ] A entidade do banco está sendo retornada no JSON da API? (Deve usar DTO).
 * [ ] O código é assíncrono do início ao fim?
-* [ ] Existe tratamento manual de saldo ou está usando o sistema de transações (`Ledger`)?
+* [ ] Existe tratamento manual de saldo ou está usando o sistema de saldo definido pelo time (ver [ADR 004](ADR/004-ledger-ao-inves-de-coluna-balance.md))?
