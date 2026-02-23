@@ -1,0 +1,38 @@
+# --- .NET ---
+bin/
+obj/
+*.user
+*.suo
+*.userossscache
+*.sln.docstates
+appsettings.Development.json
+
+# --- Node / Bun ---
+node_modules/
+dist/
+*.local
+bun.lockb
+package-lock.json
+
+# --- Environment ---
+.env
+!.env.example
+!frontend/.env.example
+
+# --- Docker ---
+docker-compose.override.yml
+
+# --- IDE ---
+.vs/
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+
+# --- Setup script (remove after first run) ---
+setup.ps1

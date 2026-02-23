@@ -11,7 +11,7 @@ Este guia define os padrões para o desenvolvimento do ecossistema front-end do 
 * **Variables/Functions:** `camelCase` (ex: `const [isModalOpen, setIsModalOpen]`).
 * **Components/Interfaces/Types:** `PascalCase` (ex: `DebtCard.tsx`, `UserPayload`).
 * **Files:** Nome do componente em `PascalCase` ou `camelCase` para utilitários.
-* **CSS:** Seguir o padrão definido pela estratégia de estilização escolhida pelo time (ver [ADR 002](ADR/002-tailwind-ao-inves-de-styled-components.md)).
+* **CSS/Styled Components:** Componentes estilizados em `PascalCase` (ex: `StatusBadge`, `Container`). Props de estilo com prefixo `$` (ex: `$healthy`). Ver [ADR 002](ADR/002-tailwind-ao-inves-de-styled-components.md).
 
 ---
 
@@ -21,19 +21,45 @@ Usaremos **Feature-Based Structure**. Se uma funcionalidade crescer, ela deve se
 
 ```text
 src/
-├── components/     # UI de uso geral (Button, Input, Modal, Badge)
-├── config/         # Configurações de env, axios, rotas
-├── features/       # Módulos de negócio
-│   ├── debts/      # Ex: Feature de Dívidas
-│   │   ├── components/ # Ex: DebtList.tsx, DebtActionButtons.tsx
-│   │   ├── hooks/      # Ex: useDebtActions.ts
-│   │   ├── services/   # Ex: debtService.ts
-│   │   └── types/      # Ex: debt.types.ts
-├── hooks/          # Hooks globais (useAuth, useLocalStorage)
-├── pages/          # Componentes de rota (Views completas)
-├── services/       # Instância da API e helpers globais
-└── utils/          # Formatadores (currency, date-fns)
+├── components/         # Componentes BURROS de uso geral (Button, Input, Modal, Badge)
+│   ├── StatusBadge/
+│   │   ├── StatusBadge.tsx       # Componente puro (recebe props, renderiza)
+│   │   └── StatusBadge.styles.ts # Styled Components do componente
+├── config/             # Configurações de env, axios, rotas
+├── features/           # Módulos de negócio
+│   ├── debts/
+│   │   ├── components/     # Componentes BURROS da feature
+│   │   │   ├── DebtCard.tsx
+│   │   │   └── DebtCard.styles.ts
+│   │   ├── hooks/          # Ex: useDebtActions.ts (lógica)
+│   │   ├── services/       # Ex: debtService.ts (chamadas API)
+│   │   └── types/          # Ex: debt.types.ts
+├── hooks/              # Hooks globais (useAuth, useLocalStorage)
+├── pages/              # Views (orquestram componentes + hooks)
+│   ├── Home/
+│   │   ├── Home.tsx            # View — monta a tela com componentes + hooks
+│   │   ├── Home.styles.ts      # Styled Components da View
+│   │   ├── Home.test.tsx       # Teste da View
+│   │   └── useHome.ts          # Hook da página (lógica local)
+├── services/           # Instância da API e helpers globais
+└── utils/              # Formatadores (currency, date-fns)
+```
 
+### Regra de Pasta
+
+Quando um componente ou página tem **mais de um arquivo** (`.tsx` + `.styles.ts` + `.test.tsx`), ele deve viver **dentro de uma pasta com seu nome**.
+
+```text
+# ❌ Errado — arquivos soltos
+pages/Home.tsx
+pages/Home.styles.ts
+pages/Home.test.tsx
+
+# ✅ Correto — pasta própria
+pages/Home/Home.tsx
+pages/Home/Home.styles.ts
+pages/Home/Home.test.tsx
+pages/Home/useHome.ts
 ```
 
 ---
@@ -42,20 +68,152 @@ src/
 
 Para facilitar o Code Review, nenhum arquivo `.tsx` deve ter mais de 150 linhas.
 
-1. **Service (Data):** Apenas chamadas `axios`. Sem lógica de tratamento, apenas retorno de tipos.
-2. **Hook (Logic):** Onde o `useEffect`, `useState` e validações residem. É o "Cérebro".
-3. **View (UI):** Onde o JSX e a estilização residem. É o "Corpo".
+### 3.1 Service (Data) — "O Mensageiro"
+
+Apenas chamadas `axios`. Sem lógica de tratamento, apenas retorno de tipos.
+
+```typescript
+// services/healthService.ts
+export async function getHealth(): Promise<HealthStatus> {
+  const { data } = await api.get<HealthStatus>('/api/health');
+  return data;
+}
+```
+
+### 3.2 Hook (Logic) — "O Cérebro"
+
+Onde `useEffect`, `useState`, validações e chamadas ao Service residem. **Toda a inteligência fica aqui.**
+O hook retorna apenas dados prontos e callbacks — a View nunca sabe como os dados são obtidos.
+
+```typescript
+// pages/Home/useHome.ts
+export function useHome() {
+  const [health, setHealth] = useState<HealthStatus | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    getHealth()
+      .then(setHealth)
+      .catch((err) => setError(err.message));
+  }, []);
+
+  return { health, error, isLoading: !health && !error };
+}
+```
+
+### 3.3 Component (Dumb) — "O Tijolo"
+
+Componentes **burros**: recebem props, renderizam UI. **Zero lógica, zero estado, zero side-effects.**
+São reutilizáveis e testáveis em isolamento.
+
+```tsx
+// components/StatusBadge/StatusBadge.tsx
+import { Badge } from './StatusBadge.styles';
+
+interface StatusBadgeProps {
+  $healthy: boolean;
+  children: React.ReactNode;
+}
+
+export function StatusBadge({ $healthy, children }: StatusBadgeProps) {
+  return <Badge $healthy={$healthy}>{children}</Badge>;
+}
+```
+
+### 3.4 View (Page) — "O Maestro"
+
+Orquestra componentes burros e injeta hooks. A View **monta a tela**, mas não contém lógica de negócio nem styled components inline.
+
+```tsx
+// pages/Home/Home.tsx
+import { useHome } from './useHome';
+import { Container, Title, Info } from './Home.styles';
+import { StatusBadge } from '../../components/StatusBadge/StatusBadge';
+
+export default function Home() {
+  const { health, error, isLoading } = useHome();
+
+  return (
+    <Container>
+      <Title>O Sindicato</Title>
+      {error && <StatusBadge $healthy={false}>Disconnected: {error}</StatusBadge>}
+      {health && (
+        <>
+          <StatusBadge $healthy={health.database}>
+            {health.status === 'healthy' ? 'Connected' : 'Disconnected'}
+          </StatusBadge>
+          <Info>Database: {health.database ? 'Online' : 'Offline'}</Info>
+        </>
+      )}
+      {isLoading && <Info>Checking connection...</Info>}
+    </Container>
+  );
+}
+```
+
+### Resumo Visual
+
+```
+Service  →  Hook  →  View  ←  Component (burro)
+ (API)     (lógica)  (monta)    (renderiza)
+```
+
+> **Regra de Ouro:** Se você está escrevendo `useState`, `useEffect` ou `try/catch` dentro de um `.tsx` de View ou Component, **pare e mova para um Hook.**
 
 ---
 
-## 4. Styling (Em Discussão)
+## 4. Styling (Styled Components)
 
-> ⚠️ **Nota:** A estratégia de estilização ainda não foi definida — ver [ADR 002](ADR/002-tailwind-ao-inves-de-styled-components.md). Esta seção será atualizada após a decisão.
+Usamos **Styled Components v6+** como estratégia de estilização — ver [ADR 002](ADR/002-tailwind-ao-inves-de-styled-components.md).
 
-Independente da escolha:
+### Regra Principal: Arquivo Separado
+
+Styled Components **sempre** ficam em um arquivo `.styles.ts` separado, nunca dentro do `.tsx`.
+
+```text
+# ❌ Errado — styled component dentro do .tsx
+Home.tsx  (contém const Container = styled.div`...`)
+
+# ✅ Correto — arquivo separado
+Home.tsx         (importa de Home.styles.ts)
+Home.styles.ts   (exporta Container, Title, Info, etc.)
+```
+
+Exemplo de arquivo `.styles.ts`:
+
+```typescript
+// pages/Home/Home.styles.ts
+import styled from 'styled-components';
+
+export const Container = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+`;
+
+export const Title = styled.h1`
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+`;
+```
+
+### Transient Props
+
+Use o prefixo `$` para props que só servem para estilização e não devem ser repassadas ao DOM.
+
+```typescript
+export const Badge = styled.span<{ $healthy: boolean }>`
+  background-color: ${({ $healthy }) => ($healthy ? '#16a34a' : '#dc2626')};
+`;
+```
+
+### Outras Regras
+
+* **Naming:** Componentes estilizados seguem `PascalCase` (ex: `StatusBadge`, `Container`, `Title`).
+* **Icons:** Use apenas **Lucide React**. Estilize tamanho via props do Lucide (`size`) ou styled-components.
+* **Responsividade:** Garantir que todos os componentes funcionem em diferentes tamanhos de tela. Use media queries dentro dos styled components.
 * **Componentes pequenos:** Se a estilização de um componente ficar muito extensa, quebre em componentes menores.
-* **Icons:** Use apenas **Lucide React**. Ex: `<Users className="w-5 h-5" />`.
-* **Responsividade:** Garantir que todos os componentes funcionem em diferentes tamanhos de tela.
 
 ---
 
@@ -106,13 +264,89 @@ Não usaremos Redux por enquanto para manter o MVP simples.
 
 ---
 
-## 9. Code Review Checklist (Frontend)
+## 9. Lint (ESLint)
+
+Usamos **ESLint 10** com **flat config** (`eslint.config.js`) e suporte nativo a TypeScript via `typescript-eslint`.
+
+### Plugins Ativos
+
+| Plugin | Papel |
+| --- | --- |
+| `@eslint/js` | Regras base recomendadas do ESLint |
+| `typescript-eslint` | Regras TypeScript (extends `recommended`) |
+| `eslint-plugin-react-hooks` | Garante regras dos Hooks (deps de `useEffect`, etc.) |
+| `eslint-plugin-react-refresh` | Valida que apenas componentes são exportados para HMR funcionar |
+
+### Regras Importantes
+
+| Regra | Nível | Motivo |
+| --- | --- | --- |
+| `@typescript-eslint/no-explicit-any` | **error** | Zero `any` — reprovação imediata |
+| `@typescript-eslint/consistent-type-imports` | warn | Prefira `import type { X }` quando possível |
+| `@typescript-eslint/no-unused-vars` | warn | Ignora variáveis com prefixo `_` |
+| `no-console` | warn | Permite apenas `console.warn` e `console.error` |
+| `eqeqeq` | error | Sempre `===`, nunca `==` |
+| `no-duplicate-imports` | error | Imports duplicados do mesmo módulo |
+| `prefer-const` | warn | Use `const` quando variável não é reatribuída |
+
+### Executar
+
+```bash
+cd frontend
+
+# Verificar (retorna erros no terminal)
+bun run lint
+
+# Corrigir automaticamente
+bun run lint:fix
+```
+
+> **PR Rule:** Todo Pull Request deve passar `bun run lint` sem erros antes do merge.
+
+---
+
+## 10. Testing (Testes)
+
+Usamos **Vitest** (integração nativa com Vite) + **React Testing Library** + **jest-dom** matchers.
+
+### Stack
+
+| Pacote | Papel |
+| --- | --- |
+| `vitest` | Test runner (configurado em `vite.config.ts`) |
+| `@testing-library/react` | Renderizar e interagir com componentes |
+| `@testing-library/jest-dom` | Matchers extras (`toBeInTheDocument`, etc.) |
+| `@testing-library/user-event` | Simular interações reais do usuário |
+| `jsdom` | Ambiente DOM para rodar testes fora do browser |
+
+### Convenções
+
+1. **Co-localização:** Testes ficam junto ao componente —`Home.tsx` → `Home.test.tsx`.
+2. **Globals:** `describe`, `it`, `expect`, `vi` estão disponíveis globalmente (config `globals: true`).
+3. **Mocks:** Use `vi.mock()` para mockar módulos (ex: api). Use `vi.fn()` para funções individuais.
+4. **Naming:** `describe('ComponentName', () => { it('describes behavior', ...) })`.
+5. **Sem detalhes de implementação:** Teste **o que o usuário vê**, não estado interno ou hooks.
+
+### Executar
+
+```bash
+bun run test        # watch mode (desenvolvimento)
+bun run test:run    # single run (CI)
+bun run test:coverage  # com cobertura
+```
+
+---
+
+## 11. Code Review Checklist (Frontend)
 
 * [ ] O componente está em inglês?
-* [ ] Existe lógica de `fetch` ou `map` pesado dentro do `.tsx` da View? (Deveria estar no Hook).
+* [ ] Existe `useState`, `useEffect` ou lógica dentro de um `.tsx` de View ou Component? (Deve estar num Hook).
+* [ ] Existem styled components definidos dentro de um `.tsx`? (Devem estar em `.styles.ts`).
+* [ ] O componente recebe dados via props (burro) ou busca dados sozinho? (Componentes devem ser burros).
 * [ ] Os valores monetários estão sendo formatados via `utils`?
 * [ ] O formulário possui validação visual de erro para o usuário?
 * [ ] O componente é responsivo?
 * [ ] Foram usados ícones do Lucide de forma consistente?
+* [ ] O código passa `bun run lint` sem erros?
 
 ---

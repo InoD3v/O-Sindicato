@@ -106,7 +106,76 @@ Dentro de `Syndicate.Domain`, usaremos **Feature Folders**:
 
 ---
 
-## 8. Code Review Checklist
+## 8. Lint & Formatting
+
+O backend utiliza **Roslyn Analyzers** + **`.editorconfig`** para garantir estilo e qualidade de código. Não usamos ferramentas externas — tudo roda via SDK do .NET.
+
+### Configuração
+
+| Arquivo | Papel |
+| --- | --- |
+| `.editorconfig` (raiz do repo) | Regras de estilo C# (var, namespaces, formatting, diagnostics) |
+| `backend/Directory.Build.props` | Habilita analyzers em todos os projetos (`EnableNETAnalyzers`, `AnalysisLevel=latest-recommended`, `EnforceCodeStyleInBuild`) |
+
+### Regras Importantes
+
+* **File-scoped namespaces** — obrigatório (`namespace X;` em vez de bloco `namespace X { }`).
+* **Remoção de usings desnecessários** (`IDE0005`) — warning em build.
+* **Readonly fields** (`IDE0044`) — warning se um campo privado pode ser `readonly`.
+* **var preferences** — usar `var` quando o tipo é aparente; tipo explícito caso contrário.
+* **CA1707 suprimido no projeto de testes** — permite underscores em nomes de métodos de teste (`Metodo_Cenario_Resultado`).
+
+### Executar
+
+```bash
+cd backend
+
+# Verificar (não altera arquivos) — use no CI
+dotnet format --verify-no-changes
+
+# Corrigir automaticamente
+dotnet format
+```
+
+> **PR Rule:** Todo Pull Request deve passar `dotnet format --verify-no-changes` antes do merge.
+
+---
+
+## 9. Testing (Testes)
+
+O projeto `Syndicate.Tests` usa **xUnit** como framework, **NSubstitute** para mocks e **FluentAssertions** (v7.x — Apache 2.0) para assertions fluentes.
+
+### Estrutura
+
+Os testes espelham a estrutura do Domain:
+
+```
+Syndicate.Tests/
+  Domain/
+    Common/          → ResultTests
+    Entities/        → DebtTests, UserTests, GroupTests, PollTests, MemberTests, TransactionTests
+    Features/
+      Auth/          → RegisterHandlerTests, LoginHandlerTests, RegisterValidatorTests, LoginValidatorTests
+```
+
+### Convenções
+
+1. **Naming:** `MetodoTestado_CenarioOuEstado_ResultadoEsperado` (ex: `Accept_WhenPending_ShouldTransitionToActive`).
+2. **AAA:** Arrange → Act → Assert.
+3. **Mocks com NSubstitute:** Substitua interfaces nos testes de Handler — nunca dependa de infraestrutura real.
+4. **Validators:** Use `TestValidate()` do FluentValidation para testar validators isoladamente.
+5. **Novos Handlers:** Sempre criar testes de handler + validator ao implementar uma nova feature.
+
+### Executar
+
+```bash
+cd backend
+dotnet test
+```
+
+---
+
+## 10. Code Review Checklist
 
 Ao revisar um Pull Request, verifique:
 
@@ -115,3 +184,4 @@ Ao revisar um Pull Request, verifique:
 * [ ] A entidade do banco está sendo retornada no JSON da API? (Deve usar DTO).
 * [ ] O código é assíncrono do início ao fim?
 * [ ] Existe tratamento manual de saldo ou está usando o sistema de saldo definido pelo time (ver [ADR 004](ADR/004-ledger-ao-inves-de-coluna-balance.md))?
+* [ ] O código passa `dotnet format --verify-no-changes` sem erros?

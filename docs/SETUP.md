@@ -149,10 +149,10 @@ cd backend
 Copie o arquivo de exemplo e preencha com seus dados locais:
 
 ```bash
-cp appsettings.Example.json appsettings.Development.json
+cp Syndicate.API/appsettings.Example.json Syndicate.API/appsettings.Development.json
 ```
 
-Edite o `appsettings.Development.json`:
+Edite o `Syndicate.API/appsettings.Development.json`:
 
 ```json
 {
@@ -177,11 +177,13 @@ dotnet restore
 
 ### 5.3 Rodar Migrations
 
+> **Nota:** Em modo `Development`, a API aplica migrations automaticamente ao iniciar. Este passo só é necessário se você quiser aplicar previamente ou se o auto-migrate falhar.
+
 ```bash
 dotnet ef database update --project Syndicate.Infrastructure --startup-project Syndicate.API
 ```
 
-> Se houver erros de conexão, verifique se o PostgreSQL está rodando e se as credenciais estão corretas no `appsettings.Development.json`.
+> Se houver erros de conexão, verifique se o PostgreSQL está rodando e se as credenciais estão corretas no `Syndicate.API/appsettings.Development.json` (ou `appsettings.json`).
 
 ### 5.4 Rodar a API
 
@@ -193,10 +195,32 @@ A API estará disponível em:
 - **HTTP:** `http://localhost:5000`
 - **Swagger:** `http://localhost:5000/swagger`
 
-### 5.5 Rodar os Testes
+### 5.5 Verificar Lint / Formatação
+
+```bash
+dotnet format --verify-no-changes   # verificar sem alterar
+dotnet format                       # corrigir automaticamente
+```
+
+O backend usa `.editorconfig` + Roslyn analyzers (`Directory.Build.props`) para garantir:
+- Code style (file-scoped namespaces, var preferences, formatting)
+- Code quality (CA rules: tipos em namespaces, readonly, usings desnecessários)
+
+### 5.6 Rodar os Testes
 
 ```bash
 dotnet test
+```
+
+O projeto `Syndicate.Tests` usa **xUnit**, **NSubstitute** (mocks) e **FluentAssertions** (assertions fluentes). Os testes estão organizados espelhando a estrutura do Domain:
+
+```
+Syndicate.Tests/
+  Domain/
+    Common/       → ResultTests
+    Entities/     → DebtTests, UserTests, GroupTests, PollTests, MemberTests, TransactionTests
+    Features/
+      Auth/        → RegisterHandlerTests, LoginHandlerTests, RegisterValidatorTests, LoginValidatorTests
 ```
 
 ---
@@ -242,14 +266,23 @@ A aplicação estará disponível em: `http://localhost:5173`
 ### 6.4 Rodar os Testes
 
 ```bash
-bun run test
+bun run test        # watch mode (desenvolvimento)
+bun run test:run    # single run (CI)
 ```
+
+O frontend usa **Vitest** + **React Testing Library** + **jest-dom**. O ambiente jsdom simula o browser. Testes ficam co-localizados com os componentes (`*.test.tsx`).
 
 ### 6.5 Verificar Lint
 
 ```bash
-bun run lint
+bun run lint        # verificar erros
+bun run lint:fix    # corrigir automaticamente o que for possível
 ```
+
+O frontend usa **ESLint 10** com flat config (`eslint.config.js`). Plugins ativos:
+- `typescript-eslint` — regras TypeScript (no `any`, imports tipados)
+- `react-hooks` — regras de hooks (deps de useEffect, etc.)
+- `react-refresh` — garante que componentes são compatíveis com HMR
 
 ---
 
@@ -266,7 +299,8 @@ Antes de começar a codar, confirme que tudo funciona:
 - [ ] Backend: `dotnet run` sobe sem erros e Swagger abre no browser
 - [ ] Frontend: `bun run dev` sobe sem erros e a tela inicial carrega
 - [ ] `dotnet test` passa sem falhas
-- [ ] `bun run test` passa sem falhas
+- [ ] `dotnet format --verify-no-changes` não reporta diferenças (backend lint)
+- [ ] `bun run test:run` passa sem falhas
 - [ ] `bun run lint` passa sem erros
 
 ---
@@ -334,11 +368,12 @@ cd frontend && bun run dev
 
 ```bash
 # 1. Rode os testes
-dotnet test
-bun run test
+cd backend && dotnet test
+cd ../frontend && bun run test:run
 
 # 2. Verifique o lint
-bun run lint
+cd ../backend && dotnet format --verify-no-changes
+cd ../frontend && bun run lint
 
 # 3. Atualize com a dev (evitar conflitos)
 git checkout dev

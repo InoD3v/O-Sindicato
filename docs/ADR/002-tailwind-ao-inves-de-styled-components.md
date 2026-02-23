@@ -1,45 +1,53 @@
-# ADR 002 — Estratégia de Estilização do Frontend
+# ADR 002 — Styled Components como Estratégia de Estilização
 
 ## Status
 
-`Em Discussão`
+`Aceita`
 
 ## Data
 
-2026-02-20
+2026-02-23
 
 ## Contexto
 
-O frontend usa React 19 + TypeScript. Precisamos escolher uma estratégia de estilização que seja rápida de desenvolver, fácil de revisar em PRs e que não gere conflitos de CSS global. **Esta decisão ainda não foi tomada** — estamos avaliando as opções abaixo antes de iniciar o desenvolvimento do frontend.
+O frontend usa React 19 + TypeScript. Precisamos escolher uma estratégia de estilização que seja rápida de desenvolver, fácil de revisar em PRs e que não gere conflitos de CSS global.
 
 ## Decisão
 
-**Pendente.** A equipe ainda está avaliando qual abordagem de estilização adotar. As opções em consideração estão listadas abaixo.
+Adotar **Styled Components (v6+)** como estratégia de estilização do frontend. Todos os estilos devem ser escritos como componentes estilizados usando tagged template literals.
 
-## Alternativas em Avaliação
+## Alternativas Consideradas
 
 | Alternativa | Prós | Contras |
 | --- | --- | --- |
-| **Tailwind CSS** | Zero CSS custom, responsividade fácil (`sm:`, `md:`), sem conflitos globais, code review visual | Classes longas no JSX, curva inicial para memorizar utilitários |
-| **Styled Components** | CSS-in-JS com escopo, dinâmico por props | Bundle maior, mais verboso, runtime overhead |
-| **CSS Modules** | Escopo isolado, CSS puro | Mais arquivos, difícil manter design system consistente |
-| **Sass/SCSS global** | Familiar para maioria | Conflitos de seletores, difícil escalar em time |
+| **Styled Components (escolhida)** | CSS-in-JS com escopo automático, dinâmico por props, co-localizado com o componente, boa DX com TypeScript | Bundle ligeiramente maior, runtime overhead (aceitável para o MVP) |
+| Tailwind CSS | Zero CSS custom, responsividade fácil (`sm:`, `md:`), sem conflitos globais | Classes longas no JSX, curva de memorização de utilitários, menos familiar para o time |
+| CSS Modules | Escopo isolado, CSS puro | Mais arquivos, difícil manter design system consistente |
+| Sass/SCSS global | Familiar para maioria | Conflitos de seletores, difícil escalar em time |
 
-## Critérios de Decisão
+## Consequências
 
-A escolha será baseada em:
-- Facilidade de onboarding para o time.
-- Qualidade do code review (o diff mostra claramente o estilo?).
-- Performance em build e runtime.
-- Compatibilidade com React 19 e ecossistema atual.
+### Positivas
+- Escopo automático — zero conflitos de CSS entre componentes.
+- Estilos dinâmicos via props com tipagem TypeScript (ex: `$healthy: boolean`).
+- Código co-localizado: estilo e componente vivem no mesmo arquivo ou pasta.
+- Fácil de fazer code review — o diff mostra claramente o que mudou.
+- Já instalado e em uso no projeto (`styled-components ^6.1.0`).
 
-## Consequências (a definir após decisão)
+### Negativas / Trade-offs
+- Bundle ligeiramente maior que CSS puro/Tailwind (aceitável para MVP).
+- Runtime overhead na geração de estilos (imperceptível para a escala do projeto).
+- Props de estilo devem usar prefixo `$` (transient props) para não vazar para o DOM.
 
-Serão documentadas quando a decisão for tomada. Este ADR será atualizado com status `Aceita` e as consequências positivas/negativas da opção escolhida.
+## Convenções
+
+1. **Transient Props:** Use prefixo `$` para props que só existem para estilização (ex: `$healthy`, `$isActive`).
+2. **Co-localização:** Componentes estilizados pequenos podem ficar no mesmo arquivo `.tsx`. Se crescerem, extraia para um arquivo `styles.ts` na mesma pasta.
+3. **Naming:** Componentes estilizados seguem `PascalCase` (ex: `const StatusBadge = styled.span<...>`).
+4. **Tema:** Se necessário, usar `ThemeProvider` do styled-components para tokens de design (cores, espaçamentos).
 
 ## Referências
 
-- [Tailwind CSS Docs](https://tailwindcss.com/docs)
 - [Styled Components Docs](https://styled-components.com/docs)
-- [CSS Modules Docs](https://github.com/css-modules/css-modules)
+- [Styled Components — Transient Props](https://styled-components.com/docs/api#transient-props)
 - [FRONTEND.md](../FRONTEND.md)

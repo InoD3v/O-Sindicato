@@ -67,25 +67,51 @@ src/
 - [Docker](https://www.docker.com/get-started/) (para PostgreSQL)
 - [Git](https://git-scm.com/)
 
-### Clonar e Rodar
+### Clonar e Rodar (Docker â€” recomendado)
 
 ```bash
 # 1. Clonar
 git clone https://github.com/InoD3v/O-Sindicato.git
 cd O-Sindicato
 
-# 2. Backend
-cd backend
-cp appsettings.Example.json appsettings.Development.json
-# Edite appsettings.Development.json com suas credenciais locais
-dotnet restore
-dotnet ef database update
-dotnet run
-
-# 3. Frontend (em outro terminal)
-cd frontend
+# 2. (Opcional) Criar .env a partir do exemplo — os defaults já funcionam sem ele
 cp .env.example .env
-# Edite .env com a URL da API (ex: VITE_API_URL=http://localhost:5000)
+
+# 3. Subir tudo com Docker Compose
+docker compose up --build
+```
+
+Pronto! A API aplica as migrations automaticamente em modo Development.
+
+| Servico | URL |
+| --- | --- |
+| **Frontend** | http://localhost:5173 |
+| **Backend API** | http://localhost:5000 |
+| **Swagger UI** | http://localhost:5000/swagger |
+| **Health Check** | http://localhost:5000/api/health |
+
+### Clonar e Rodar (Local â€” sem Docker Compose)
+
+```bash
+# 1. Clonar
+git clone https://github.com/InoD3v/O-Sindicato.git
+cd O-Sindicato
+
+# 2. Subir PostgreSQL via Docker
+docker run -d --name syndicate-postgres \
+  -e POSTGRES_DB=syndicate_dev \
+  -e POSTGRES_USER=syndicate_user \
+  -e POSTGRES_PASSWORD=SyndicateDev123! \
+  -p 5432:5432 postgres:16
+
+# 3. Backend
+cd backend
+dotnet restore
+dotnet run --project Syndicate.API
+# (migrations são aplicadas automaticamente em Development)
+
+# 4. Frontend (em outro terminal)
+cd frontend
 bun install
 bun run dev
 ```
