@@ -41,7 +41,7 @@ Exemplos:
 | # | Título | Status | Data |
 | --- | --- | --- | --- |
 | 001 | [MediatR como padrão de Commands/Queries](001-mediator-como-padrao-cqrs.md) | ✅ Aceita | 2026-02-20 |
-| 002 | [Styled Components como Estratégia de Estilização](002-tailwind-ao-inves-de-styled-components.md) | ✅ Aceita | 2026-02-23 |
+| 002 | [Styled Components como Estratégia de Estilização](002-styled-components-como-default-de-design.md) | ✅ Aceita | 2026-02-23 |
 | 003 | [PostgreSQL como banco principal](003-postgres-como-banco-principal.md) | ✅ Aceita | 2026-02-20 |
 | 004 | [Estratégia de Saldo: Ledger vs Coluna Balance](004-ledger-ao-inves-de-coluna-balance.md) | 🟡 Em Discussão | 2026-02-20 |
 | 005 | [Context API ao invés de Redux](005-context-api-ao-inves-de-redux.md) | ✅ Aceita | 2026-02-20 |

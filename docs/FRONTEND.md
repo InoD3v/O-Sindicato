@@ -11,7 +11,7 @@ Este guia define os padrões para o desenvolvimento do ecossistema front-end do 
 * **Variables/Functions:** `camelCase` (ex: `const [isModalOpen, setIsModalOpen]`).
 * **Components/Interfaces/Types:** `PascalCase` (ex: `DebtCard.tsx`, `UserPayload`).
 * **Files:** Nome do componente em `PascalCase` ou `camelCase` para utilitários.
-* **CSS/Styled Components:** Componentes estilizados em `PascalCase` (ex: `StatusBadge`, `Container`). Props de estilo com prefixo `$` (ex: `$healthy`). Ver [ADR 002](ADR/002-tailwind-ao-inves-de-styled-components.md).
+* **CSS/Styled Components:** Componentes estilizados em `PascalCase` (ex: `StatusBadge`, `Container`). Props de estilo com prefixo `$` (ex: `$healthy`). Ver [ADR 002](ADR/002-styled-components-como-default-de-design.md).
 
 ---
 
@@ -164,7 +164,7 @@ Service  →  Hook  →  View  ←  Component (burro)
 
 ## 4. Styling (Styled Components)
 
-Usamos **Styled Components v6+** como estratégia de estilização — ver [ADR 002](ADR/002-tailwind-ao-inves-de-styled-components.md).
+Usamos **Styled Components v6+** como estratégia de estilização — ver [ADR 002](ADR/002-styled-components-como-default-de-design.md).
 
 ### Regra Principal: Arquivo Separado
 
