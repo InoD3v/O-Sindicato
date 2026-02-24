@@ -46,6 +46,7 @@ Exemplos:
 | 004 | [Estratégia de Saldo: Ledger vs Coluna Balance](004-ledger-ao-inves-de-coluna-balance.md) | 🟡 Em Discussão | 2026-02-20 |
 | 005 | [Context API ao invés de Redux](005-context-api-ao-inves-de-redux.md) | ✅ Aceita | 2026-02-20 |
 | 006 | [Docker como ambiente de desenvolvimento](006-docker-como-ambiente-dev.md) | ✅ Aceita | 2026-02-20 |
+| 007 | [Arquitetura de Componentes e Padrões de Composição](007-arquitetura-componentes-composicao.md) | ✅ Aceita | 2026-02-24 |
 
 ---
 
