@@ -15,35 +15,115 @@ Este guia define os padrões para o desenvolvimento do ecossistema front-end do 
 
 ---
 
-## 2. Folder Structure (Arquitetura por Features)
+## 2. Folder Structure (Arquitetura por Features + Atomic Design)
 
-Usaremos **Feature-Based Structure**. Se uma funcionalidade crescer, ela deve ser autossuficiente.
+Usaremos **Feature-Based Structure** combinada com **Atomic Design** na camada de componentes globais.
 
 ```text
 src/
-├── components/         # Componentes BURROS de uso geral (Button, Input, Modal, Badge)
-│   ├── StatusBadge/
-│   │   ├── StatusBadge.tsx       # Componente puro (recebe props, renderiza)
-│   │   └── StatusBadge.styles.ts # Styled Components do componente
-├── config/             # Configurações de env, axios, rotas
-├── features/           # Módulos de negócio
+├── components/           # Componentes BURROS globais (Atomic Design)
+│   ├── atoms/            # Elementos indivisíveis (Button, Input, Badge, Text)
+│   │   └── Badge/
+│   │       ├── Badge.tsx
+│   │       └── Badge.styles.ts
+│   ├── molecules/        # Combinações de Atoms (FormField, SearchBar, NavItem)
+│   │   └── FormField/
+│   │       ├── FormField.tsx
+│   │       └── FormField.styles.ts
+│   └── organisms/        # Seções complexas de UI (Header, Sidebar, DebtTable)
+│       └── Header/
+│           ├── Header.tsx
+│           └── Header.styles.ts
+├── config/               # Configurações de env, axios, rotas
+├── features/             # Módulos de negócio
+│   ├── home/
+│   │   ├── pages/        # Páginas da feature
+│   │   │   └── Home/
+│   │   │       ├── Home.tsx          # View — monta a tela
+│   │   │       ├── Home.styles.ts    # Styled Components da View
+│   │   │       ├── Home.test.tsx     # Teste da View
+│   │   │       └── useHome.ts        # Hook da página (lógica local)
+│   │   ├── services/     # Ex: healthService.ts (chamadas API)
+│   │   └── types/        # Ex: health.types.ts
 │   ├── debts/
-│   │   ├── components/     # Componentes BURROS da feature
-│   │   │   ├── DebtCard.tsx
-│   │   │   └── DebtCard.styles.ts
-│   │   ├── hooks/          # Ex: useDebtActions.ts (lógica)
-│   │   ├── services/       # Ex: debtService.ts (chamadas API)
-│   │   └── types/          # Ex: debt.types.ts
-├── hooks/              # Hooks globais (useAuth, useLocalStorage)
-├── pages/              # Views (orquestram componentes + hooks)
-│   ├── Home/
-│   │   ├── Home.tsx            # View — monta a tela com componentes + hooks
-│   │   ├── Home.styles.ts      # Styled Components da View
-│   │   ├── Home.test.tsx       # Teste da View
-│   │   └── useHome.ts          # Hook da página (lógica local)
-├── services/           # Instância da API e helpers globais
-└── utils/              # Formatadores (currency, date-fns)
+│   │   ├── components/   # Componentes BURROS da feature (qualquer nível atômico)
+│   │   │   └── DebtCard/
+│   │   │       ├── DebtCard.tsx
+│   │   │       └── DebtCard.styles.ts
+│   │   ├── hooks/        # Ex: useDebtActions.ts (lógica)
+│   │   ├── pages/        # Ex: DebtsPage/DebtsPage.tsx
+│   │   ├── services/     # Ex: debtService.ts (chamadas API)
+│   │   └── types/        # Ex: debt.types.ts
+├── hooks/                # Hooks globais (useAuth, useLocalStorage)
+├── pages/                # ⚠️ Barrel — apenas re-exporta páginas das features
+│   └── index.ts            # export { Home } from '@/features/home/pages/Home/Home'
+├── routes/               # Configuração de rotas
+│   ├── index.ts            # Re-exporta AppRoutes e PrivateRoute
+│   ├── AppRoutes.tsx       # Todas as <Route> da aplicação
+│   └── PrivateRoute.tsx    # Wrapper para rotas autenticadas
+├── services/             # Instância da API e helpers globais
+└── utils/                # Formatadores (currency, date-fns)
 ```
+
+### Regra de Pages
+
+Páginas vivem **dentro de sua feature** em `features/<feature>/pages/`. A pasta `src/pages/` é apenas um **barrel** (arquivo `index.ts`) que re-exporta as páginas. As rotas (`App.tsx`) importam **somente** do barrel.
+
+```typescript
+// src/pages/index.ts  — barrel (NEVER put components here)
+export { default as Home } from '@/features/home/pages/Home/Home';
+export { default as DebtsPage } from '@/features/debts/pages/DebtsPage/DebtsPage';
+// ... demais features
+```
+
+```tsx
+// App.tsx — delega para AppRoutes
+import { AppRoutes } from '@/routes';
+
+function App() {
+  return <AppRoutes />;
+}
+```
+
+### Rotas Privadas
+
+Use `PrivateRoute` para proteger rotas que exigem autenticação:
+
+```tsx
+// routes/AppRoutes.tsx
+import { Routes, Route } from 'react-router-dom';
+import { PrivateRoute } from './PrivateRoute';
+import { Home, DebtsPage } from '@/pages';
+
+export function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/debts" element={
+        <PrivateRoute>
+          <DebtsPage />
+        </PrivateRoute>
+      } />
+    </Routes>
+  );
+}
+```
+
+> **Regra:** `App.tsx` apenas renderiza `<AppRoutes />`. Toda lógica de rotas fica em `src/routes/`.
+
+### Atomic Design — Níveis
+
+Os componentes globais (`src/components/`) seguem a classificação do **Atomic Design**:
+
+| Nível | O que é | Exemplos | Regra |
+| --- | --- | --- | --- |
+| **Atom** | Menor unidade de UI, indivisível | `Button`, `Input`, `Badge`, `Text`, `Spinner`, `Icon` | Sem dependência de outro componente do projeto |
+| **Molecule** | Combinação de 2+ Atoms com propósito único | `FormField` (Label + Input + Error), `SearchBar` (Input + Button) | Composta apenas de Atoms |
+| **Organism** | Seção complexa da UI, combina Molecules e/ou Atoms | `Header`, `Sidebar`, `DataTable`, `PollCard` | Pode importar Atoms e Molecules |
+
+> **Regra de Importação:** Atoms não importam nada. Molecules importam Atoms. Organisms importam Molecules e/ou Atoms. **Nunca** importe de cima para baixo.
+
+> **Dentro de Features:** Os componentes em `features/<feature>/components/` podem ser de qualquer nível atômico, mas seguem as mesmas regras de "burro" (zero lógica, zero state). A classificação atoms/molecules/organisms **fica apenas na pasta global** `src/components/` para evitar over-engineering nas features.
 
 ### Regra de Pasta
 
@@ -51,15 +131,15 @@ Quando um componente ou página tem **mais de um arquivo** (`.tsx` + `.styles.ts
 
 ```text
 # ❌ Errado — arquivos soltos
-pages/Home.tsx
-pages/Home.styles.ts
-pages/Home.test.tsx
+features/home/pages/Home.tsx
+features/home/pages/Home.styles.ts
+features/home/pages/Home.test.tsx
 
 # ✅ Correto — pasta própria
-pages/Home/Home.tsx
-pages/Home/Home.styles.ts
-pages/Home/Home.test.tsx
-pages/Home/useHome.ts
+features/home/pages/Home/Home.tsx
+features/home/pages/Home/Home.styles.ts
+features/home/pages/Home/Home.test.tsx
+features/home/pages/Home/useHome.ts
 ```
 
 ---
@@ -73,11 +153,25 @@ Para facilitar o Code Review, nenhum arquivo `.tsx` deve ter mais de 150 linhas.
 Apenas chamadas `axios`. Sem lógica de tratamento, apenas retorno de tipos.
 
 ```typescript
-// services/healthService.ts
+// features/home/services/healthService.ts
 export async function getHealth(): Promise<HealthStatus> {
   const { data } = await api.get<HealthStatus>('/api/health');
   return data;
 }
+```
+
+> **CQRS no Service:** Separe **sempre** as funções de **Leitura** (Queries) das de **Escrita** (Commands/Mutations) no mesmo Service. Isso organiza o código por intenção e facilita manutenção. Hoje usamos `useState` + `useEffect` nos hooks; quando adotarmos uma lib de cache (React Query/SWR), a separação já estará pronta.
+
+```typescript
+// features/debts/services/debtService.ts
+
+// ─── Queries (Leitura) ──────────────────────────────
+export async function getDebts(): Promise<Debt[]> { ... }
+export async function getDebtById(id: string): Promise<Debt> { ... }
+
+// ─── Commands (Escrita) ─────────────────────────────
+export async function createDebt(data: CreateDebtPayload): Promise<Debt> { ... }
+export async function settleDebt(id: string): Promise<void> { ... }
 ```
 
 ### 3.2 Hook (Logic) — "O Cérebro"
@@ -106,18 +200,33 @@ export function useHome() {
 Componentes **burros**: recebem props, renderizam UI. **Zero lógica, zero estado, zero side-effects.**
 São reutilizáveis e testáveis em isolamento.
 
-```tsx
-// components/StatusBadge/StatusBadge.tsx
-import { Badge } from './StatusBadge.styles';
+Em `src/components/` seguem a classificação **Atomic Design** (ver Seção 2): `atoms/` → `molecules/` → `organisms/`.
+Dentro de features (`features/<feature>/components/`) ficam sem sub-pastas atômicas.
 
-interface StatusBadgeProps {
-  $healthy: boolean;
+```tsx
+// components/atoms/Badge/Badge.tsx
+import { BadgeWrapper } from './Badge.styles';
+
+interface BadgeProps {
+  $variant: 'success' | 'danger';
   children: React.ReactNode;
 }
 
-export function StatusBadge({ $healthy, children }: StatusBadgeProps) {
-  return <Badge $healthy={$healthy}>{children}</Badge>;
+export function Badge({ $variant, children }: BadgeProps) {
+  return <BadgeWrapper $variant={$variant}>{children}</BadgeWrapper>;
 }
+```
+
+#### Regra de Composição: Prefira Slots
+
+Prefira props que recebem `ReactNode` (slots) em vez de passar múltiplas props de dados. Isso mantém o componente genérico e evita acoplamento.
+
+```tsx
+// ❌ Errado — componente acoplado a dados e callbacks específicos
+<UserCard name={user.name} onEdit={handleEdit} onDelete={handleDelete} />
+
+// ✅ Correto — componente recebe slots genéricos
+<UserCard actions={<UserActions onEdit={handleEdit} onDelete={handleDelete} />} />
 ```
 
 ### 3.4 View (Page) — "O Maestro"
@@ -125,10 +234,10 @@ export function StatusBadge({ $healthy, children }: StatusBadgeProps) {
 Orquestra componentes burros e injeta hooks. A View **monta a tela**, mas não contém lógica de negócio nem styled components inline.
 
 ```tsx
-// pages/Home/Home.tsx
+// features/home/pages/Home/Home.tsx
 import { useHome } from './useHome';
 import { Container, Title, Info } from './Home.styles';
-import { StatusBadge } from '../../components/StatusBadge/StatusBadge';
+import { Badge } from '@/components/atoms/Badge/Badge';
 
 export default function Home() {
   const { health, error, isLoading } = useHome();
@@ -136,12 +245,12 @@ export default function Home() {
   return (
     <Container>
       <Title>O Sindicato</Title>
-      {error && <StatusBadge $healthy={false}>Disconnected: {error}</StatusBadge>}
+      {error && <Badge $variant="danger">Disconnected: {error}</Badge>}
       {health && (
         <>
-          <StatusBadge $healthy={health.database}>
+          <Badge $variant={health.database ? 'success' : 'danger'}>
             {health.status === 'healthy' ? 'Connected' : 'Disconnected'}
-          </StatusBadge>
+          </Badge>
           <Info>Database: {health.database ? 'Online' : 'Offline'}</Info>
         </>
       )}
@@ -343,6 +452,9 @@ bun run test:coverage  # com cobertura
 * [ ] Existe `useState`, `useEffect` ou lógica dentro de um `.tsx` de View ou Component? (Deve estar num Hook).
 * [ ] Existem styled components definidos dentro de um `.tsx`? (Devem estar em `.styles.ts`).
 * [ ] O componente recebe dados via props (burro) ou busca dados sozinho? (Componentes devem ser burros).
+* [ ] Componentes globais estão na pasta atômica correta (`atoms/`, `molecules/`, `organisms/`)?
+* [ ] Services separam Queries de Commands (CQRS)?
+* [ ] Páginas estão dentro de `features/<feature>/pages/` e re-exportadas no barrel `src/pages/index.ts`?
 * [ ] Os valores monetários estão sendo formatados via `utils`?
 * [ ] O formulário possui validação visual de erro para o usuário?
 * [ ] O componente é responsivo?

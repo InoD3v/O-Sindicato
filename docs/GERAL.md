@@ -45,7 +45,7 @@ Usaremos variáveis de ambiente para tudo que muda conforme o local onde o códi
 Para evitar brigas de estilo no Code Review e garantir que o código pareça escrito por uma única pessoa:
 
 * **EditorConfig:** Teremos um arquivo `.editorconfig` na raiz. Ele configura automaticamente o seu VS Code ou Visual Studio para usar o mesmo número de espaços, tipo de quebra de linha e indentação.
-* **Prettier/ESLint (Front):** O build falhará se houver erros de lint. Formate seu código antes de commitar. Usamos **Bun** como runtime e package manager.
+* **ESLint (Front):** O build falhará se houver erros de lint. Execute `bun run lint` antes de commitar. Usamos **Bun** como runtime e package manager.
 * **Format on Save:** Recomendamos ativar a opção "Format on Save" na sua IDE.
 
 ---
