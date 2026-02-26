@@ -366,8 +366,28 @@ Não usaremos Redux por enquanto para manter o MVP simples.
 
 * **No Any:** O uso de `any` causará reprovação imediata no Code Review.
 * **Interfaces vs Types:**
-* Use `interface` para definições de objetos globais e entidades.
-* Use `type` para uniões (ex: `type Status = 'open' | 'closed'`).
+  * Use `interface` para definições de objetos globais e entidades.
+  * Use `type` para uniões (ex: `type Status = 'open' | 'closed'`).
+* **No Enums — Use `as const`:** Enums do TypeScript são proibidos. Use objetos `as const` + tipo derivado. O ESLint bloqueia `enum` automaticamente.
+
+```typescript
+// ❌ Proibido — enum gera código JS desnecessário e não é tree-shakeable
+enum DebtStatus {
+  Pending = 'PENDING',
+  Active = 'ACTIVE',
+  Settled = 'SETTLED',
+}
+
+// ✅ Correto — "as const" object + derived type
+const DEBT_STATUS = {
+  Pending: 'PENDING',
+  Active: 'ACTIVE',
+  Settled: 'SETTLED',
+} as const;
+
+type DebtStatus = (typeof DEBT_STATUS)[keyof typeof DEBT_STATUS];
+// Result type: 'PENDING' | 'ACTIVE' | 'SETTLED'
+```
 
 * **Generics:** Use em componentes de lista ou inputs genéricos para manter a flexibilidade.
 
@@ -397,6 +417,13 @@ Usamos **ESLint 10** com **flat config** (`eslint.config.js`) e suporte nativo a
 | `eqeqeq` | error | Sempre `===`, nunca `==` |
 | `no-duplicate-imports` | error | Imports duplicados do mesmo módulo |
 | `prefer-const` | warn | Use `const` quando variável não é reatribuída |
+| `no-restricted-syntax` (TSEnumDeclaration) | **error** | Enums proibidos — use `as const` objects |
+| `@typescript-eslint/naming-convention` | warn | camelCase vars, PascalCase types, sem prefixo `I` em interfaces |
+| `max-lines` | warn | Máximo 150 linhas por arquivo (ignora comentários/linhas em branco) |
+| `no-warning-comments` | warn | Avisa sobre TODO/HACK/FIXME esquecidos |
+| `no-restricted-imports` (../../) | error | Proíbe imports relativos profundos — use `@/` alias |
+| `no-var` | error | Proíbe `var` — use `const`/`let` |
+| `react-hooks/exhaustive-deps` | error | Deps faltando em useEffect são bugs |
 
 ### Executar
 
