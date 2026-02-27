@@ -90,12 +90,44 @@ Dentro de `Syndicate.Domain`, usaremos **Feature Folders**:
 
 ## 6. Golden Rules (Regras de Ouro)
 
-1. **Async All The Way:** Todo método de IO (Banco/API) deve ser `async` e terminar com o sufixo `Async`.
-2. **DTO Isolation:** Entidades de banco **nunca** saem na API. Use `Responses` ou `ViewModels`.
-3. **Fail Fast:** Valide os dados com `FluentValidation` antes de qualquer lógica de negócio.
-4. **Result Pattern:** Métodos de serviço/handlers devem retornar um objeto `Result` (Sucesso/Erro) em vez de lançar exceções para controle de fluxo.
-5. **Transactional Integrity:** Operações de Escrow (Dívidas) devem rodar dentro de um `IDbContextTransaction`.
-6. **No Try-Catch Walls:** Deixe o `GlobalExceptionMiddleware` capturar erros não tratados. Use log para erros críticos.
+1. **Rich Domain Model:** Entidades **não são sacolas de dados**. Devem conter métodos que representam comportamentos de negócio com guards/validações internas. Setters são `private set` e mutações acontecem apenas através de métodos públicos que garantem consistência. Entidades imutáveis por design (ex: `Transaction`, `Vote`) são aceitáveis apenas com factory `Create()`.
+2. **Async All The Way:** Todo método de IO (Banco/API) deve ser `async` e terminar com o sufixo `Async`.
+3. **DTO Isolation:** Entidades de banco **nunca** saem na API. Use `Responses` ou `ViewModels`.
+4. **Fail Fast:** Valide os dados com `FluentValidation` antes de qualquer lógica de negócio.
+5. **Result Pattern:** Métodos de serviço/handlers devem retornar um objeto `Result` (Sucesso/Erro) em vez de lançar exceções para controle de fluxo.
+6. **Transactional Integrity:** Operações de Escrow (Dívidas) devem rodar dentro de um `IDbContextTransaction`.
+7. **No Try-Catch Walls:** Deixe o `GlobalExceptionMiddleware` capturar erros não tratados. Use log para erros críticos.
+
+### Rich vs Anemic
+
+```csharp
+// ❌ Anêmico — sacola de dados, lógica mora no Handler
+public class Debt {
+    public DebtStatus Status { get; set; }
+}
+
+// Handler faz tudo:
+if (debt.Status != DebtStatus.Pending)
+    return Result.Failure("...");
+debt.Status = DebtStatus.Active;  // setter público — qualquer um muda
+
+// ✅ Rico — entidade protege seu próprio estado
+public class Debt {
+    public DebtStatus Status { get; private set; }
+
+    public Result Accept() {
+        if (Status != DebtStatus.Pending)
+            return Result.Failure("Debt can only be accepted when pending.");
+        Status = DebtStatus.Active;
+        return Result.Success();
+    }
+}
+
+// Handler apenas delega:
+var result = debt.Accept();
+```
+
+> **Regra:** Toda vez que um código fora da entidade fizer `entity.Property = valor`, pare e crie um método na entidade.
 
 ---
 
@@ -181,6 +213,7 @@ Ao revisar um Pull Request, verifique:
 
 * [ ] O nome de alguma variável ou classe está em Português? (Se sim, peça para mudar).
 * [ ] Existe lógica de negócio dentro da Controller? (Deve ir para um Handler).
+* [ ] Existe mutação direta de propriedade fora da entidade? (Ex: `debt.Status = ...` — deve ser `debt.Accept()`).
 * [ ] A entidade do banco está sendo retornada no JSON da API? (Deve usar DTO).
 * [ ] O código é assíncrono do início ao fim?
 * [ ] Existe tratamento manual de saldo ou está usando o sistema de saldo definido pelo time (ver [ADR 004](ADR/004-ledger-ao-inves-de-coluna-balance.md))?

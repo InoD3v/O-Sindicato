@@ -13,6 +13,7 @@ dist/
 *.local
 bun.lockb
 package-lock.json
+*.tsbuildinfo
 
 # --- Environment ---
 .env

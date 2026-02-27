@@ -3,7 +3,7 @@ root = true
 
 # ─── Defaults ────────────────────────────────────────────
 [*]
-indent_style = space
+indent_style = tabs
 indent_size = 4
 end_of_line = lf
 charset = utf-8
@@ -65,9 +65,124 @@ csharp_indent_switch_labels = true
 csharp_space_after_cast = false
 csharp_space_after_keywords_in_control_flow_statements = true
 
+# ─── Naming Conventions ──────────────────────────────────
+# See: docs/BACKEND.md § 2 — Naming Conventions
+
+# --- Symbols -----------------------------------------------------------
+
+# Public/internal members (classes, methods, properties, events, enums)
+dotnet_naming_symbols.public_members.applicable_kinds           = class,struct,enum,method,property,event,delegate,namespace
+dotnet_naming_symbols.public_members.applicable_accessibilities = public,internal,protected,protected_internal
+
+# Interfaces
+dotnet_naming_symbols.interfaces.applicable_kinds           = interface
+dotnet_naming_symbols.interfaces.applicable_accessibilities = *
+
+# Private/protected fields  (_camelCase)
+dotnet_naming_symbols.private_fields.applicable_kinds           = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private,protected,private_protected
+
+# Const fields (PascalCase)
+dotnet_naming_symbols.const_fields.applicable_kinds           = field
+dotnet_naming_symbols.const_fields.applicable_accessibilities = *
+dotnet_naming_symbols.const_fields.required_modifiers         = const
+
+# Static readonly fields (PascalCase — treat like constants)
+dotnet_naming_symbols.static_readonly_fields.applicable_kinds           = field
+dotnet_naming_symbols.static_readonly_fields.applicable_accessibilities = *
+dotnet_naming_symbols.static_readonly_fields.required_modifiers         = static,readonly
+
+# Parameters and local variables (camelCase)
+dotnet_naming_symbols.parameters.applicable_kinds = parameter
+dotnet_naming_symbols.locals.applicable_kinds      = local
+
+# Local functions (PascalCase)
+dotnet_naming_symbols.local_functions.applicable_kinds = local_function
+
+# Type parameters (T prefix)
+dotnet_naming_symbols.type_parameters.applicable_kinds = type_parameter
+
+# Async methods
+dotnet_naming_symbols.async_methods.applicable_kinds           = method
+dotnet_naming_symbols.async_methods.applicable_accessibilities = *
+dotnet_naming_symbols.async_methods.required_modifiers         = async
+
+# --- Styles ------------------------------------------------------------
+
+dotnet_naming_style.pascal_case.capitalization        = pascal_case
+
+dotnet_naming_style.camel_case.capitalization         = camel_case
+
+dotnet_naming_style.prefix_underscore.capitalization  = camel_case
+dotnet_naming_style.prefix_underscore.required_prefix = _
+
+dotnet_naming_style.begins_with_i.capitalization      = pascal_case
+dotnet_naming_style.begins_with_i.required_prefix     = I
+
+dotnet_naming_style.begins_with_t.capitalization      = pascal_case
+dotnet_naming_style.begins_with_t.required_prefix     = T
+
+dotnet_naming_style.ends_with_async.capitalization    = pascal_case
+dotnet_naming_style.ends_with_async.required_suffix   = Async
+
+# --- Rules (order matters — first match wins) --------------------------
+
+# 1) Interfaces must begin with "I"
+dotnet_naming_rule.interfaces_begin_with_i.severity = warning
+dotnet_naming_rule.interfaces_begin_with_i.symbols  = interfaces
+dotnet_naming_rule.interfaces_begin_with_i.style    = begins_with_i
+
+# 2) Const fields — PascalCase (checked before private fields)
+dotnet_naming_rule.const_fields_pascal.severity = warning
+dotnet_naming_rule.const_fields_pascal.symbols  = const_fields
+dotnet_naming_rule.const_fields_pascal.style    = pascal_case
+
+# 3) Static readonly fields — PascalCase
+dotnet_naming_rule.static_readonly_pascal.severity = warning
+dotnet_naming_rule.static_readonly_pascal.symbols  = static_readonly_fields
+dotnet_naming_rule.static_readonly_pascal.style    = pascal_case
+
+# 4) Private/protected fields must be _camelCase
+dotnet_naming_rule.private_fields_underscore.severity = warning
+dotnet_naming_rule.private_fields_underscore.symbols  = private_fields
+dotnet_naming_rule.private_fields_underscore.style    = prefix_underscore
+
+# 5) Async methods must end with "Async" (Golden Rule #2)
+dotnet_naming_rule.async_methods_end_with_async.severity = suggestion
+dotnet_naming_rule.async_methods_end_with_async.symbols  = async_methods
+dotnet_naming_rule.async_methods_end_with_async.style    = ends_with_async
+
+# 6) Type parameters must begin with "T"
+dotnet_naming_rule.type_parameters_begin_with_t.severity = warning
+dotnet_naming_rule.type_parameters_begin_with_t.symbols  = type_parameters
+dotnet_naming_rule.type_parameters_begin_with_t.style    = begins_with_t
+
+# 7) Public/internal members — PascalCase
+dotnet_naming_rule.public_members_pascal.severity = warning
+dotnet_naming_rule.public_members_pascal.symbols  = public_members
+dotnet_naming_rule.public_members_pascal.style    = pascal_case
+
+# 8) Parameters — camelCase
+dotnet_naming_rule.parameters_camel.severity = warning
+dotnet_naming_rule.parameters_camel.symbols  = parameters
+dotnet_naming_rule.parameters_camel.style    = camel_case
+
+# 9) Local variables — camelCase
+dotnet_naming_rule.locals_camel.severity = suggestion
+dotnet_naming_rule.locals_camel.symbols  = locals
+dotnet_naming_rule.locals_camel.style    = camel_case
+
+# 10) Local functions — PascalCase
+dotnet_naming_rule.local_functions_pascal.severity = suggestion
+dotnet_naming_rule.local_functions_pascal.symbols  = local_functions
+dotnet_naming_rule.local_functions_pascal.style    = pascal_case
+
+# ─── Diagnostics ─────────────────────────────────────────
+
 # Language rules — Warnings
 dotnet_diagnostic.CA1050.severity = warning    # Declare types in namespaces
 dotnet_diagnostic.CA1062.severity = none       # Validate arguments (too noisy with DI)
+dotnet_diagnostic.CA1707.severity = warning    # No underscores in identifiers
 dotnet_diagnostic.CA1822.severity = suggestion # Mark members as static
 dotnet_diagnostic.CA1848.severity = suggestion # LoggerMessage delegates (overkill for small projects)
 dotnet_diagnostic.CA2007.severity = none       # ConfigureAwait (not needed in ASP.NET)
@@ -78,6 +193,12 @@ dotnet_diagnostic.IDE0044.severity = warning   # Add readonly modifier
 dotnet_diagnostic.IDE0055.severity = warning   # Formatting
 dotnet_diagnostic.IDE0060.severity = suggestion # Remove unused parameter
 dotnet_diagnostic.IDE0161.severity = warning   # File-scoped namespace
+dotnet_diagnostic.IDE1006.severity = warning   # Naming rule violation
+
+# ─── Test Projects ───────────────────────────────────────
+# Allow underscores in test method names: Method_Scenario_Result
+[*Tests/**/*.cs]
+dotnet_diagnostic.CA1707.severity = none
 
 # ─── Frontend (TS/TSX/JS) ───────────────────────────────
 [*.{ts,tsx,js,jsx}]

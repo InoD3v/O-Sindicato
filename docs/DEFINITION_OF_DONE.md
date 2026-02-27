@@ -43,6 +43,7 @@ Independente de ser frontend, backend ou documentação, toda tarefa deve:
 | **Entity** | Representar dados do domínio | Dependências de infraestrutura |
 
 - [ ] Controllers estão **magras** (Thin Controllers) — apenas delegam ao `IMediator`.
+- [ ] Entidades seguem **Rich Domain Model** — mutações via métodos com guards, setters são `private set`.
 - [ ] Entidades de banco **nunca** são retornadas diretamente na API — sempre usar DTOs/Responses.
 - [ ] Métodos de IO são `async` + sufixo `Async`.
 - [ ] Serviços são injetados via **construtor** (nunca `serviceProvider.GetService`).
@@ -51,13 +52,19 @@ Independente de ser frontend, backend ou documentação, toda tarefa deve:
 
 | Camada | Responsabilidade | Proibido |
 | --- | --- | --- |
-| **Service** | Chamadas HTTP (axios) | Lógica de estado, manipulação de UI |
-| **Hook** | Lógica de estado, efeitos, validações | JSX, chamadas HTTP diretas |
-| **View (`.tsx`)** | Renderização, estilização, interação visual | Fetch de dados, lógica de negócio pesada |
+| **Service** | Chamadas HTTP (axios). Separar Queries de Commands (CQRS). | Lógica de estado, manipulação de UI |
+| **Hook** ("🧠 Cérebro") | Lógica de estado, efeitos, validações. Chama o Service. | JSX, chamadas HTTP diretas |
+| **Component** ("🧱 Burro") | Recebe props, renderiza UI. Zero lógica. Atomic Design: Atom → Molecule → Organism. | `useState`, `useEffect`, chamadas a API |
+| **View / Page** ("🎼 Maestro") | Orquestra Components + injeta Hooks | Lógica de negócio, styled components inline |
 
 - [ ] Nenhum componente `.tsx` ultrapassa **150 linhas**.
-- [ ] Chamadas à API estão **isoladas nos Services**.
+- [ ] Chamadas à API estão **isoladas nos Services** (nunca no Hook direto).
 - [ ] Estado e lógica de negócio estão nos **Hooks**.
+- [ ] Componentes são **burros** — recebem props, não buscam dados.
+- [ ] Componentes globais (`src/components/`) estão classificados em **atoms/**, **molecules/** ou **organisms/** (Atomic Design).
+- [ ] Páginas vivem em `features/<feature>/pages/` e são re-exportadas pelo barrel `src/pages/index.ts`.
+- [ ] Services separam funções de **Queries** (leitura) e **Commands** (escrita) — CQRS.
+- [ ] Styled Components estão em arquivos **`.styles.ts` separados** (nunca dentro do `.tsx`).
 - [ ] Não existe uso de `any` no TypeScript.
 - [ ] Formulários possuem **schema Zod** para validação.
 
@@ -133,17 +140,24 @@ describe("useDebtActions", () => {
 
 - [ ] Existe lógica de negócio dentro da Controller?
 - [ ] A entidade do banco está sendo retornada no JSON da API?
+- [ ] Existe mutação direta de propriedade de entidade fora da própria entidade? (Deve ser um método na entidade — Rich Domain Model).
 - [ ] O código é assíncrono do início ao fim (`async/await`)?
 - [ ] Existe tratamento manual de saldo ou está seguindo a estratégia definida pelo time (ver [ADR 004](ADR/004-ledger-ao-inves-de-coluna-balance.md))?
 - [ ] O `Down()` da Migration reverte corretamente o `Up()`?
 
 #### Frontend
 
-- [ ] Existência de lógica de `fetch` ou `map` pesado dentro do `.tsx` da View? (Deveria estar no Hook).
+- [ ] Existe `useState`, `useEffect` ou lógica dentro de um `.tsx` de View ou Component? (Deve estar num Hook).
+- [ ] Existem styled components definidos dentro de um `.tsx`? (Devem estar em `.styles.ts`).
+- [ ] O componente é burro (recebe props) ou busca dados sozinho?
+- [ ] Componentes globais estão na pasta atômica correta (atoms/molecules/organisms)?
+- [ ] Páginas estão em `features/<feature>/pages/` e re-exportadas no barrel `src/pages/index.ts`?
+- [ ] Services separam Queries de Commands (CQRS)?
 - [ ] Os valores monetários (Pikas) estão formatados via `utils`?
 - [ ] Os formulários possuem validação visual de erro?
 - [ ] O componente é responsivo?
 - [ ] Existe uso de `any`?
+- [ ] O código passa `bun run lint` sem erros?
 
 ---
 

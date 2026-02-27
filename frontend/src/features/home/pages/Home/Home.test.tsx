@@ -1,18 +1,14 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { vi, type Mock } from 'vitest';
-import Home from '@/pages/Home/Home';
-import api from '@/services/api';
+import { vi } from 'vitest';
+import Home from '@/features/home/pages/Home/Home';
+import * as healthService from '@/features/home/services/healthService';
 
-// Mock the API module
-vi.mock('@/services/api', () => ({
-  default: {
-    get: vi.fn(),
-    interceptors: {
-      request: { use: vi.fn() },
-      response: { use: vi.fn() },
-    },
-  },
+// Mock the health service module
+vi.mock('@/features/home/services/healthService', () => ({
+  getHealth: vi.fn(),
 }));
+
+const mockGetHealth = vi.mocked(healthService.getHealth);
 
 describe('Home', () => {
   beforeEach(() => {
@@ -20,7 +16,7 @@ describe('Home', () => {
   });
 
   it('shows loading message initially', () => {
-    (api.get as Mock).mockReturnValue(new Promise(() => {})); // never resolves
+    mockGetHealth.mockReturnValue(new Promise(() => {})); // never resolves
 
     render(<Home />);
 
@@ -28,12 +24,10 @@ describe('Home', () => {
   });
 
   it('shows healthy status when API returns healthy', async () => {
-    (api.get as Mock).mockResolvedValue({
-      data: {
-        status: 'healthy',
-        database: true,
-        timestamp: '2025-01-01T00:00:00Z',
-      },
+    mockGetHealth.mockResolvedValue({
+      status: 'healthy',
+      database: true,
+      timestamp: '2025-01-01T00:00:00Z',
     });
 
     render(<Home />);
@@ -46,7 +40,7 @@ describe('Home', () => {
   });
 
   it('shows error badge when API call fails', async () => {
-    (api.get as Mock).mockRejectedValue(new Error('Network Error'));
+    mockGetHealth.mockRejectedValue(new Error('Network Error'));
 
     render(<Home />);
 
@@ -56,12 +50,10 @@ describe('Home', () => {
   });
 
   it('shows database offline when database is false', async () => {
-    (api.get as Mock).mockResolvedValue({
-      data: {
-        status: 'unhealthy',
-        database: false,
-        timestamp: '2025-01-01T00:00:00Z',
-      },
+    mockGetHealth.mockResolvedValue({
+      status: 'unhealthy',
+      database: false,
+      timestamp: '2025-01-01T00:00:00Z',
     });
 
     render(<Home />);
@@ -74,7 +66,7 @@ describe('Home', () => {
   });
 
   it('renders the title', () => {
-    (api.get as Mock).mockReturnValue(new Promise(() => {}));
+    mockGetHealth.mockReturnValue(new Promise(() => {}));
 
     render(<Home />);
 
