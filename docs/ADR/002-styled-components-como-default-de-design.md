@@ -45,9 +45,11 @@ Adotar **Styled Components (v6+)** como estratégia de estilização do frontend
 2. **Co-localização:** Componentes estilizados pequenos podem ficar no mesmo arquivo `.tsx`. Se crescerem, extraia para um arquivo `styles.ts` na mesma pasta.
 3. **Naming:** Componentes estilizados seguem `PascalCase` (ex: `const StatusBadge = styled.span<...>`).
 4. **Tema:** Se necessário, usar `ThemeProvider` do styled-components para tokens de design (cores, espaçamentos).
+5. **Mobile First:** Todos os estilos devem ser escritos primeiro para mobile. Use media queries com `min-width` para adicionar estilos para telas maiores (ver [FRONTEND.md](../FRONTEND.md) para detalhes).
 
 ## Referências
 
 - [Styled Components Docs](https://styled-components.com/docs)
 - [Styled Components — Transient Props](https://styled-components.com/docs/api#transient-props)
 - [FRONTEND.md](../FRONTEND.md)
+- [ADR 007 — Arquitetura de Componentes e Padrões de Composição](007-arquitetura-componentes-composicao.md)

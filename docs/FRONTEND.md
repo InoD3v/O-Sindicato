@@ -324,6 +324,50 @@ export const Badge = styled.span<{ $healthy: boolean }>`
 * **Responsividade:** Garantir que todos os componentes funcionem em diferentes tamanhos de tela. Use media queries dentro dos styled components.
 * **Componentes pequenos:** Se a estilização de um componente ficar muito extensa, quebre em componentes menores.
 
+### 🚨 Mobile First
+
+**IMPORTANTE:** Este projeto adota a estratégia **Mobile First**.
+
+* **Estilos Base:** Todos os estilos devem ser escritos primeiro para dispositivos móveis (mobile).
+* **Media Queries:** Use media queries para **adicionar** estilos para telas maiores (tablet e desktop), nunca o contrário.
+* **Breakpoints:** Use min-width nas media queries, não max-width.
+
+```typescript
+// ✅ Correto — Mobile First
+export const Container = styled.div`
+  padding: 1rem;           // Mobile (base)
+  font-size: 0.875rem;     // Mobile (base)
+
+  @media (min-width: 768px) {
+    padding: 2rem;         // Tablet
+    font-size: 1rem;
+  }
+
+  @media (min-width: 1024px) {
+    padding: 3rem;         // Desktop
+    font-size: 1.125rem;
+  }
+`;
+
+// ❌ Errado — Desktop First
+export const Container = styled.div`
+  padding: 3rem;           // Desktop
+  
+  @media (max-width: 1024px) {
+    padding: 2rem;         // Tablet
+  }
+  
+  @media (max-width: 768px) {
+    padding: 1rem;         // Mobile
+  }
+`;
+```
+
+**Por que Mobile First?**
+- Performance: Dispositivos móveis carregam apenas o CSS necessário.
+- Progressivo: Você constrói do mais simples para o mais complexo.
+- Tendência moderna: A maioria dos usuários acessa via mobile.
+
 ---
 
 ## 5. Forms & Validation (React Hook Form + Zod)
@@ -484,7 +528,7 @@ bun run test:coverage  # com cobertura
 * [ ] Páginas estão dentro de `features/<feature>/pages/` e re-exportadas no barrel `src/pages/index.ts`?
 * [ ] Os valores monetários estão sendo formatados via `utils`?
 * [ ] O formulário possui validação visual de erro para o usuário?
-* [ ] O componente é responsivo?
+* [ ] O componente é responsivo e segue a estratégia **Mobile First** (estilos base para mobile + media queries com `min-width`)?
 * [ ] Foram usados ícones do Lucide de forma consistente?
 * [ ] O código passa `bun run lint` sem erros?
 
