@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Syndicate.API/Syndicate.API.csproj" />
+  <Project Path="Syndicate.Domain/Syndicate.Domain.csproj" />
+  <Project Path="Syndicate.Infrastructure/Syndicate.Infrastructure.csproj" />
+  <Project Path="Syndicate.Tests/Syndicate.Tests.csproj" />
+</Solution>

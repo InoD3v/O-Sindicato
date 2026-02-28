@@ -1,0 +1,12 @@
+# ── Development Dockerfile (Vite HMR via volume mount) ──
+FROM oven/bun:latest
+WORKDIR /app
+
+# Install dependencies first (cached layer)
+COPY package.json bun.lock* ./
+RUN bun install
+
+# Source code is mounted as volume — no COPY needed at runtime
+EXPOSE 5173
+
+CMD ["bun", "run", "dev"]

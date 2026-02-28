@@ -1,0 +1,8 @@
+Aqui a interface começa a tomar forma. Organismos são grupos de moléculas (e talvez átomos) que formam uma seção complexa e distinta da interface.
+
+Exemplos: O Header (Logotipo + Menu + SearchBar), uma Sidebar ou um Card de produto.
+
+Lógica: Organismos podem ser independentes ou contextuais (específicos de uma feature).
+
+
+HEADER

@@ -36,15 +36,45 @@ Para manter a organização, toda branch deve seguir este padrão:
 
 ## 3. Padrão de Commits (Conventional Commits)
 
-Os prefixos ajudam a entender o que foi feito sem precisar ler o código. Use sempre em inglês o tipo, mas pode descrever em português se preferir (ou manter tudo em inglês para treinar):
+Os prefixos ajudam a entender o que foi feito sem precisar ler o código. Use sempre em inglês o tipo, mas pode descrever em português se preferir (ou manter tudo em inglês para treinar).
 
-* `feat:` Nova funcionalidade.
-* `fix:` Correção de bug.
-* `docs:` Mudanças apenas na documentação.
-* `style:` Formatação, pontos e vírgulas (não afeta o código).
-* `refactor:` Mudança no código que não altera comportamento (limpeza).
+### Formato
 
-**Exemplo:** `feat: S1-VOTACAO: implementa cálculo de voto por pikas`
+O commit **deve** seguir o regex abaixo (validado por hook/CI):
+
+```
+^(feat|refactor|style|docs|fix|chore|perf|test|ci)([\w-]+) .+(\n\n[\s\S]*)?$
+```
+
+Ou seja: `tipo(escopo) descrição curta`, com corpo opcional separado por linha em branco.
+
+### Tipos permitidos
+
+* `feat` — Nova funcionalidade.
+* `fix` — Correção de bug.
+* `docs` — Mudanças apenas na documentação.
+* `style` — Formatação, pontos e vírgulas (não afeta o código).
+* `refactor` — Mudança no código que não altera comportamento (limpeza).
+* `chore` — Tarefas de manutenção (configs, dependências, scripts).
+* `perf` — Melhoria de performance.
+* `test` — Adição ou correção de testes.
+* `ci` — Alterações em pipelines de CI/CD.
+
+### Exemplos
+
+```
+feat(S1-VOTACAO) implementa cálculo de voto por pikas
+```
+
+```
+fix(S1-AUTH) corrige refresh token expirado
+```
+
+```
+docs(S1-DOCS) adiciona ADR de ledger
+
+Explica por que escolhemos ledger ao invés de coluna balance.
+```
 
 ---
 

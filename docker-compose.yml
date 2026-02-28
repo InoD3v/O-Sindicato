@@ -1,0 +1,97 @@
+# =============================================================
+# Docker Compose — Development Environment
+# =============================================================
+# Usage:
+#   docker compose up --build        (first time or after dependency changes)
+#   docker compose up                (day-to-day)
+#   docker compose down              (stop all)
+#   docker compose down -v           (stop + delete DB data)
+# =============================================================
+
+services:
+  # ── PostgreSQL ──────────────────────────────────────────────
+  postgres:
+    image: postgres:16
+    container_name: syndicate-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: syndicate_dev
+      POSTGRES_USER: syndicate_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-SyndicateDev123!}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U syndicate_user -d syndicate_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - syndicate-network
+
+  # ── Backend (.NET 10 — dotnet watch) ────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.dev
+    container_name: syndicate-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5000
+      - DOTNET_USE_POLLING_FILE_WATCHER=true
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=syndicate_dev;Username=syndicate_user;Password=${POSTGRES_PASSWORD:-SyndicateDev123!}
+      - Jwt__Secret=${JWT_SECRET:-DevOnlySecretKeyThatIsAtLeast32Characters!!}
+      - Jwt__Issuer=syndicate-dev
+      - Jwt__Audience=syndicate-dev
+    volumes:
+      - ./backend:/src
+      - backend_nuget:/root/.nuget/packages
+      - backend_obj_api:/src/Syndicate.API/obj
+      - backend_obj_domain:/src/Syndicate.Domain/obj
+      - backend_obj_infra:/src/Syndicate.Infrastructure/obj
+      - backend_bin_api:/src/Syndicate.API/bin
+      - backend_bin_domain:/src/Syndicate.Domain/bin
+      - backend_bin_infra:/src/Syndicate.Infrastructure/bin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - syndicate-network
+
+  # ── Frontend (React 19 — Vite HMR) ─────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: syndicate-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:5000
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - syndicate-network
+
+volumes:
+  postgres_data:
+  backend_nuget:
+  backend_obj_api:
+  backend_obj_domain:
+  backend_obj_infra:
+  backend_bin_api:
+  backend_bin_domain:
+  backend_bin_infra:
+  frontend_node_modules:
+
+networks:
+  syndicate-network:
+    driver: bridge

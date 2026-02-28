@@ -1,0 +1,17 @@
+# ── Development Dockerfile (hot reload via dotnet watch) ──
+FROM mcr.microsoft.com/dotnet/sdk:10.0
+WORKDIR /src
+
+# Restore dependencies first (cached layer)
+COPY backend/Syndicate.slnx .
+COPY backend/Syndicate.API/Syndicate.API.csproj Syndicate.API/
+COPY backend/Syndicate.Domain/Syndicate.Domain.csproj Syndicate.Domain/
+COPY backend/Syndicate.Infrastructure/Syndicate.Infrastructure.csproj Syndicate.Infrastructure/
+COPY backend/Syndicate.Tests/Syndicate.Tests.csproj Syndicate.Tests/
+RUN dotnet restore
+
+# Source code is mounted as volume — no COPY needed at runtime
+EXPOSE 5000
+
+# dotnet watch provides hot reload on file changes
+ENTRYPOINT ["dotnet", "watch", "run", "--project", "Syndicate.API", "--no-launch-profile"]
